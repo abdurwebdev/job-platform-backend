@@ -53,5 +53,5 @@ app.include_router(job_router)
 @app.get("/")
 def home():
     return {
-        "message": "Welcome to job portals"
+        "message": "Welcome to job portal"
     }

@@ -8,6 +8,7 @@ from app.models.job import Job
 
 def get_alljobs(db: Session) -> Sequence[Job]:
     """Fetches all jobs from the database."""
+    
     jobs = db.query(Job).all()
     if not jobs:
         return []

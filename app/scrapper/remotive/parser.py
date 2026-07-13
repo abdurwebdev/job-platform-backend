@@ -1,5 +1,5 @@
 import html
-import nh3
+import bleach
 from app.scrapper.schemas import StandardJob
 
 
@@ -8,17 +8,18 @@ def parse_remotive_jobs(jobs_from_remotive):
     jobs = data.get('jobs', [])
     alljobsfromremotives = []
     
-    ALLOWED_TAGS = {
+    # 1. Elements allowed to pass through the filter
+    ALLOWED_TAGS = [
         'p', 'b', 'i', 'strong', 'em', 'u', 'br',
         'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
         'ul', 'ol', 'li',
         'table', 'thead', 'tbody', 'tr', 'th', 'td',
         'blockquote', 'pre', 'code', 'a'
-    }
+    ]
     
-    # Keep href and target, and manually handle rel since link_rel=None is active now
+    # 2. Map structural elements to allowed attributes
     ALLOWED_ATTRIBUTES = {
-        'a': {'href', 'target', 'rel'}
+        'a': ['href', 'target', 'rel']
     }
     
     for job in jobs:
@@ -27,23 +28,24 @@ def parse_remotive_jobs(jobs_from_remotive):
         if not html_description:
             continue
             
+        # Standardize HTML markup symbols safely
         html_description = html.unescape(html_description)
         
         try:
-            # Added link_rel=None here to resolve the constraint exception
-            clean_description = nh3.clean(
+            # 3. Clean string via pure-Python bleach engine
+            clean_description = bleach.clean(
                 html_description,
                 tags=ALLOWED_TAGS,
                 attributes=ALLOWED_ATTRIBUTES,
-                link_rel=None
+                strip=True  # Strips out unauthorized structural markers cleanly
             )
         except Exception as e:
-            print(f"nh3 cleaner error encountered: {e}")
+            print(f"Bleach cleaner error encountered: {e}")
             clean_description = html_description 
 
         if not clean_description.strip():
             clean_description = html_description
-        print(clean_description)
+        
         standard_job = StandardJob(
             title=job.get("title"),
             company_name=job.get("company_name"),

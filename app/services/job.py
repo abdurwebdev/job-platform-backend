@@ -1,100 +1,153 @@
-from typing import Any, Dict, List, Sequence
+from typing import Dict, List
+
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
 from app.core.logger import logger
 from app.models.job import Job
+from app.scraper.schemas import StandardJob
 
 
-def get_alljobs(db: Session) -> Sequence[Job]:
-    """Fetches all jobs from the database."""
-    
-    jobs = db.query(Job).all()
-    if not jobs:
-        return []
-    return jobs
-    
-  
-def save_jobs_to_db(jobs: List[Any], db: Session) -> Dict[str, int]:
-    """Saves a batch of raw scraped jobs into the database while ignoring duplicates.
-    
-    Uses savepoints to track failures per-job accurately without rolling back the whole batch.
+def get_alljobs(db: Session) -> List[Job]:
+    """Return all jobs."""
+
+    return db.query(Job).all()
+
+
+def save_jobs_to_db(
+    jobs: List[StandardJob],
+    db: Session,
+) -> Dict[str, int]:
     """
+    Save scraped jobs while skipping duplicates.
+    """
+
+    if not jobs:
+        logger.warning("No jobs received for saving.")
+
+        return {
+            "scraped": 0,
+            "inserted": 0,
+            "duplicates": 0,
+            "failed": 0,
+            "new_jobs": 0,
+        }
+
     inserted = 0
     duplicates = 0
     failed = 0
-    
-    if not jobs:
-        logger.warning("No jobs provided to save_jobs_to_db.")
-        return {"scrapped": 0, "inserted": 0, "duplicates": 0, "failed": 0, "new_jobs": 0}
-        
+
     try:
-        logger.info(f"Running {jobs[0].source} Scrapper....")
-        logger.info(f"Fetched {len(jobs)} Jobs.....")
-        
-        # Pull down existing URLs to optimize duplicate checking locally
         existing_urls = {
-            url for (url,) in db.query(Job.url).all()
+            url
+            for (url,) in db.query(Job.url).all()
         }
+
+        logger.info(
+            f"Fetched {len(existing_urls)} existing job URLs."
+        )
+
     except Exception:
-        logger.exception("Fatal error: Failed to fetch existing job URLs from database.")
+        logger.exception(
+            "Failed fetching existing URLs."
+        )
         raise
 
     for job in jobs:
+
+        if not job.url:
+            failed += 1
+
+            logger.warning(
+                f"Skipping job without URL: {job.title}"
+            )
+
+            continue
+
         if job.url in existing_urls:
             duplicates += 1
-            logger.info(f"Duplicate Job Skipped {job.title}")
-            continue
-            
-        # 1. Establish a savepoint for this individual job
-        db.begin_nested() 
-        try:
-            new_job = Job(
-                title=job.title,
-                company_name=job.company_name,
-                url=job.url,
-                category=job.category,
-                tags=job.tags,
-                job_type=job.job_type,
-                publication_date=job.publication_date,
-                candidate_required_location=job.candidate_required_location,
-                salary=job.salary,
-                description=job.description,
-                source=job.source
-            )
-            db.add(new_job)
-            db.flush()  # 2. Force SQLAlchemy to check constraints/errors immediately
-            inserted += 1
-        except Exception:
-            db.rollback()  # 3. Roll back ONLY this single bad job
-            failed += 1
-            logger.exception(f"Failed to insert individual job: {job.title}")
 
-    # 4. Commit all successful insertions safely at the end
+            logger.info(
+                f"Duplicate skipped: {job.title}"
+            )
+
+            continue
+
+        try:
+
+            with db.begin_nested():
+
+                new_job = Job(
+                    title=job.title,
+                    url=job.url,
+                    company_name=job.company_name,
+                    company_logo=job.company_logo,
+                    category=job.category,
+                    tags=job.tags,
+                    job_type=job.job_type,
+                    publication_date=job.publication_date,
+                    salary=job.salary,
+                    candidate_required_location=job.candidate_required_location,
+                    description=job.description,
+                    source=job.source,
+                )
+
+                db.add(new_job)
+
+                db.flush()
+
+            existing_urls.add(job.url)
+
+            inserted += 1
+
+        except Exception:
+
+            failed += 1
+
+            logger.exception(
+                f"Failed inserting job: {job.title}"
+            )
+
     try:
+
         db.commit()
-        logger.info(f"Inserted {inserted} Jobs.....")
-        logger.info(f"{jobs[0].source} scrape completed successfully.")
+
+        logger.info(
+            f"Successfully inserted {inserted} jobs."
+        )
+
     except Exception:
+
         db.rollback()
-        logger.exception("Fatal error committing the scraping batch transaction.")
+
+        logger.exception(
+            "Database commit failed."
+        )
+
         raise
-        
+
     return {
-        "scrapped": len(jobs),
+        "scraped": len(jobs),
         "inserted": inserted,
         "duplicates": duplicates,
         "failed": failed,
-        "new_jobs": inserted
+        "new_jobs": inserted,
     }
 
 
-def showdetails(job_id: Any, db: Session) -> Job:
-    """Retrieves a single job by its ID or raises a 404 error if not found."""
-    isexists = db.query(Job).filter(Job.id == job_id).first()
-    if not isexists:
+def showdetails(job_id: int, db: Session) -> Job:
+    """Return a job by ID."""
+
+    job = (
+        db.query(Job)
+        .filter(Job.id == job_id)
+        .first()
+    )
+
+    if job is None:
         raise HTTPException(
             status_code=404,
-            detail="Job not found!"
+            detail="Job not found.",
         )
-    return isexists
+
+    return job

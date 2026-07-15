@@ -2,18 +2,28 @@ from fastapi import APIRouter,Depends,Response
 from sqlalchemy.orm import Session
 from app.services.job import get_alljobs,save_jobs_to_db,showdetails
 from app.database.database import get_db
-from app.scrapper.remotive.scraper import scrape_remotive_jobs
+from app.scraper.orchestrator import run_all_scrapers
+
 from app.schemas.job import JobUIOverviewSchema,JobDetailOverview
 
 router = APIRouter(
   prefix = "/api/job",
   tags = ["Jobs"]
 )
-
 @router.post("/scrape")
-def scrape_jobs(db:Session = Depends(get_db)):
-  jobs = scrape_remotive_jobs()
-  return save_jobs_to_db(jobs,db)
+def scrape_jobs(db: Session = Depends(get_db)):
+    
+    scrape_reports = run_all_scrapers()
+    
+   
+    all_jobs = []
+    for report in scrape_reports:
+        all_jobs.extend(report.jobs)
+    
+   
+    save_jobs_to_db(all_jobs, db)
+    
+    return scrape_reports
 
 @router.get("/all",response_model = list[JobUIOverviewSchema])
 def getall(response: Response,db:Session = Depends(get_db)):

@@ -1,8 +1,8 @@
 import html
 import bleach
 import re
-from datetime import datetime
 from typing import Union
+from datetime import datetime, timezone
 
 ALLOWED_TAGS = [
     "p",
@@ -21,9 +21,7 @@ ALLOWED_TAGS = [
     "a",
 ]
 
-ALLOWED_ATTRIBUTES = {
-    "a": ["href", "target", "rel"]
-}
+ALLOWED_ATTRIBUTES = {"a": ["href", "target", "rel"]}
 
 
 def clean_html(html_content: str) -> str:
@@ -107,14 +105,13 @@ def fix_mojibake(text: str) -> str:
     """
     if not isinstance(text, str):
         return text
-    
+
     try:
         # This reverses the common misinterpretation of UTF-8 as Latin-1
-        return text.encode('latin-1').decode('utf-8')
+        return text.encode("latin-1").decode("utf-8")
     except (UnicodeEncodeError, UnicodeDecodeError):
         # If it fails, return the original text as it might already be correct
         return text
-
 
 
 def format_salary_range(min_val, max_val, currency="USD", period="annual") -> str:
@@ -124,9 +121,10 @@ def format_salary_range(min_val, max_val, currency="USD", period="annual") -> st
 
     # Conversion rate for MXN to USD
     rate = 17.43
-    
+
     def convert(val):
-        if val is None or val == 0: return None
+        if val is None or val == 0:
+            return None
         if currency == "MXN":
             val = val / rate
         return val
@@ -145,29 +143,32 @@ def format_salary_range(min_val, max_val, currency="USD", period="annual") -> st
     # Logic: If both exist and are similar, show one value
     if min_usd and max_usd and abs(min_usd - max_usd) < 1.0:
         return f"{fmt(min_usd)}"
-    
+
     if min_usd and max_usd:
         return f"{fmt(min_usd)} - {fmt(max_usd)}"
     elif min_usd:
         return f"From {fmt(min_usd)}"
     else:
         return f"Up to {fmt(max_usd)}"
-    
-       
+
+
 def parse_datetime(date_str: str) -> datetime:
     """
-    Parse ISO datetime safely.
+    Parse ISO datetime safely with timezone normalization.
     """
 
     if not date_str:
-        return datetime.utcnow()
+        datetime.now(timezone.utc)()
 
     try:
-        return datetime.fromisoformat(
-            date_str.split("+")[0]
-        )
+        # Fix incomplete timezone: +05 -> +05:00
+        if re.search(r"[+-]\d{2}$", date_str):
+            date_str = f"{date_str}:00"
+
+        return datetime.fromisoformat(date_str)
+
     except ValueError:
-        return datetime.utcnow()
+        datetime.now(timezone.utc)()
 
 
 def parse_timestamp(timestamp) -> datetime:
@@ -176,9 +177,9 @@ def parse_timestamp(timestamp) -> datetime:
     """
 
     if not timestamp:
-        return datetime.utcnow()
+        return datetime.now(timezone.utc)
 
-    return datetime.fromtimestamp(timestamp)
+    return datetime.fromtimestamp(timestamp, tz=timezone.utc)
 
 
 def normalize_location(location: str) -> str:
@@ -192,13 +193,7 @@ def normalize_location(location: str) -> str:
     location = html.unescape(location).strip(", ")
 
     return ", ".join(
-        sorted(
-            {
-                part.strip()
-                for part in location.split(",")
-                if part.strip()
-            }
-        )
+        sorted({part.strip() for part in location.split(",") if part.strip()})
     )
 
 
@@ -221,6 +216,7 @@ def format_salary(
         return f"From {currency}{minimum:,}"
 
     return f"Up to {currency}{maximum:,}"
+
 
 def normalize_company_name(
     company_name: str | None,

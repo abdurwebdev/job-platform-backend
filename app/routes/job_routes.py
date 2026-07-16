@@ -31,22 +31,17 @@ def scrape_jobs(
 
     return scrape_reports
 
-
-@router.get(
-    "/all",
-    response_model=list[JobUIOverviewSchema],
-)
+@router.get("/all")
 def get_all_jobs(
-    response: Response,
-    service: JobService = Depends(get_job_service),
+    page: int = 1,
+    limit: int = 20,
+    search: str = None,
+    service: JobService = Depends(get_job_service)
 ):
-    logger.info("Fetching all Jobs")
-    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
-    response.headers["Pragma"] = "no-cache"
-
-    return service.get_all_jobs()
-
-
+    skip = (page - 1) * limit
+    jobs = service.repository.get_paginated_jobs(skip, limit, search)
+    total = service.repository.count_jobs(search)
+    return {"jobs": jobs, "total": total, "page": page, "limit": limit}
 @router.get(
     "/job-detail/{jobId}",
     response_model=JobDetailOverview,

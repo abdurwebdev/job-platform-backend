@@ -15,26 +15,27 @@ from app.middleware.request_id import RequestIDMiddleware
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("Starting up backend application...")
-    
+
     try:
+        # Create tables
+        Base.metadata.create_all(bind=engine)
+
+        # Check database connection
         with engine.connect() as connection:
             connection.execute(text("SELECT 1"))
-            
-        
+
         logger.info("Database connected and tables verified successfully.")
-        
+
     except Exception as e:
         logger.critical(
-            f"FATAL: Database connection failed at startup. "
-            f"Aborting boot sequence. Error: {e}", 
-            exc_info=True
+            f"FATAL: Database startup failed. Error: {e}",
+            exc_info=True,
         )
         sys.exit(1)
 
-    yield 
+    yield
 
     logger.info("Shutting down backend application...")
-
 
 app = FastAPI(
     title=settings.app_name,

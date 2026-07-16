@@ -39,3 +39,23 @@ class JobRepository:
 
     def begin_nested(self):
         return self.db.begin_nested()
+    
+    def get_paginated_jobs(self, skip: int, limit: int, search: Optional[str] = None):
+        
+        
+        query = self.db.query(Job)
+        if search:
+            
+            query = query.filter(Job.title.ilike(f"%{search}%"))
+        return query.offset(skip).limit(limit).all()
+
+    def count_jobs(self, search: Optional[str] = None) -> int:
+        
+        
+        
+        query = self.db.query(Job)
+        if search:
+            
+            
+            query = query.filter(Job.title.ilike(f"%{search}%"))
+        return query.count()

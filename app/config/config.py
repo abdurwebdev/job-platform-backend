@@ -12,7 +12,9 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
 
     database_url: PostgresDsn
-
+    
+    findwork_api_key: str
+    
     allowed_origins: list[str] = [
         "http://localhost:3000",
         "https://job-platform-frontend-62ud.vercel.app",

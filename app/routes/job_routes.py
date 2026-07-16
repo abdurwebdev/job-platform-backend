@@ -1,10 +1,10 @@
 from fastapi import APIRouter,Depends,Response
 from sqlalchemy.orm import Session
-from app.services.job import get_alljobs,save_jobs_to_db,showdetails
+from app.services.job_service import get_all_jobs,get_job_details,save_jobs_to_db
 from app.database.database import get_db
 from app.scraper.orchestrator import run_all_scrapers
 
-from app.schemas.job import JobUIOverviewSchema,JobDetailOverview
+from app.schemas.job_schema import JobUIOverviewSchema,JobDetailOverview
 
 router = APIRouter(
   prefix = "/api/job",
@@ -29,8 +29,8 @@ def scrape_jobs(db: Session = Depends(get_db)):
 def getall(response: Response,db:Session = Depends(get_db)):
   response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
   response.headers["Pragma"] = "no-cache"
-  return get_alljobs(db) 
+  return get_all_jobs(db) 
 
 @router.get("/job-detail/{jobId}",response_model = JobDetailOverview)
 def getdetails(jobId:int,db:Session = Depends(get_db)):
-  return showdetails(jobId,db)
+  return get_job_details(jobId,db)

@@ -1,4 +1,4 @@
-from typing import Any, List
+from typing import Any, Optional
 
 from app.scraper.base_api import BaseApiScraper
 from app.scraper.job_factory import build_job
@@ -14,37 +14,36 @@ class ArbeitnowScraper(BaseApiScraper):
             source_name="Arbeitnow",
         )
 
-    def parse(self, data: Any) -> List[StandardJob]:
+    def map_item(
+        self,
+        item: Any,
+    ) -> Optional[StandardJob]:
+        description = self.clean_html(
+            item.get("description", "")
+        )
 
-        jobs: List[StandardJob] = []
-
-        for item in data:
-
-            description = self.clean_html(
-                item.get("description", "")
-            )
-
-            jobs.append(
-                build_job(
-                    title=item.get("title"),
-                    url=item.get("url"),
-                    company_name=item.get("company_name"),
-                    company_logo=item.get("company_logo"),
-                    category=item.get("category") or "General",
-                    tags=item.get("tags", []),
-                    job_type=item.get("job_type") or "Full-time",
-                    publication_date=item.get("publication_date"),
-                    salary=item.get("salary", "Undisclosed"),
-                    candidate_required_location=(
-                        item.get("candidate_required_location")
-                        or "Global"
-                    ),
-                    description=description,
-                    source=self.source_name,
-                    remote=item.get("remote"),
-                    location=item.get("location"),
-                    external_id=item.get("slug"),
+        return build_job(
+            title=item.get("title"),
+            url=item.get("url"),
+            company_name=item.get("company_name"),
+            company_logo=item.get("company_logo"),
+            category=item.get("category") or "General",
+            tags=item.get("tags", []),
+            job_type=item.get("job_type") or "Full-time",
+            publication_date=item.get("publication_date"),
+            salary=item.get(
+                "salary",
+                "Undisclosed",
+            ),
+            candidate_required_location=(
+                item.get(
+                    "candidate_required_location"
                 )
-            )
-
-        return jobs
+                or "Global"
+            ),
+            description=description,
+            source=self.source_name,
+            remote=item.get("remote"),
+            location=item.get("location"),
+            external_id=item.get("slug"),
+        )

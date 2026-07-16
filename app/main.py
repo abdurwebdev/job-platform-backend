@@ -10,7 +10,7 @@ from sqlalchemy.sql import text  # Used to safely ping the DB
 
 from app.database.database import Base, engine
 from app.core.logger import logger
-from app.routes.job import router as job_router
+from app.routes.job_routes import router as job_router
 
 
 @asynccontextmanager

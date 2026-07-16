@@ -1,35 +1,47 @@
-from abc import ABC
-from typing import List
+from abc import abstractmethod
+from typing import Any, List, Optional
 
 from app.scraper.base import BaseScraper
 from app.scraper.client import get_json
 from app.scraper.schemas import StandardJob
 
 
-class BaseApiScraper(BaseScraper, ABC):
-    """
-    Base class for API-based scrapers.
-
-    Child classes only need to define:
-    - source_name
-    - url
-    - data_key (optional)
-    - parse()
-    """
-
-    data_key: str | None = None
+class BaseApiScraper(BaseScraper):
+    data_key: Optional[str] = None
 
     def __init__(self, url: str, source_name: str):
         self.url = url
         self.source_name = source_name
 
     def scrape(self) -> List[StandardJob]:
-        data = get_json(self.url)
+        response = get_json(self.url)
 
-        if not data:
+        if response is None:
             return []
 
+        data = response
+
         if self.data_key:
-            data = data.get(self.data_key, [])
+            data = response.get(self.data_key, [])
 
         return self.parse(data)
+
+    def parse(self, data: Any) -> List[StandardJob]:
+        jobs: List[StandardJob] = []
+
+        for item in data:
+
+            job = self.map_item(item)
+
+            if job is not None:
+                jobs.append(job)
+
+        return jobs
+
+    @abstractmethod
+    def map_item(self, item: Any) -> Optional[StandardJob]:
+        """
+        Convert one API response item into a StandardJob.
+        Return None if the item should be skipped.
+        """
+        pass

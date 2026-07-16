@@ -4,23 +4,36 @@ from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
 from app.core.logger import logger
-from app.models.job import Job
+from app.models.job_model import Job
+from app.repositories.job_repository import JobRepository
 from app.scraper.schemas import StandardJob
 
 
-def get_alljobs(db: Session) -> List[Job]:
-    """Return all jobs."""
+def get_all_jobs(db: Session) -> List[Job]:
+    repository = JobRepository(db)
+    return repository.get_all_jobs()
 
-    return db.query(Job).all()
+
+def get_job_details(job_id: int, db: Session) -> Job:
+    repository = JobRepository(db)
+
+    job = repository.get_job_by_id(job_id)
+
+    if job is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Job not found.",
+        )
+
+    return job
 
 
 def save_jobs_to_db(
     jobs: List[StandardJob],
     db: Session,
 ) -> Dict[str, int]:
-    """
-    Save scraped jobs while skipping duplicates.
-    """
+
+    repository = JobRepository(db)
 
     if not jobs:
         logger.warning("No jobs received for saving.")
@@ -38,10 +51,7 @@ def save_jobs_to_db(
     failed = 0
 
     try:
-        existing_urls = {
-            url
-            for (url,) in db.query(Job.url).all()
-        }
+        existing_urls = repository.get_existing_urls()
 
         logger.info(
             f"Fetched {len(existing_urls)} existing job URLs."
@@ -75,7 +85,7 @@ def save_jobs_to_db(
 
         try:
 
-            with db.begin_nested():
+            with repository.begin_nested():
 
                 new_job = Job(
                     title=job.title,
@@ -92,9 +102,9 @@ def save_jobs_to_db(
                     source=job.source,
                 )
 
-                db.add(new_job)
+                repository.add_job(new_job)
 
-                db.flush()
+                repository.flush()
 
             existing_urls.add(job.url)
 
@@ -110,7 +120,7 @@ def save_jobs_to_db(
 
     try:
 
-        db.commit()
+        repository.commit()
 
         logger.info(
             f"Successfully inserted {inserted} jobs."
@@ -118,7 +128,7 @@ def save_jobs_to_db(
 
     except Exception:
 
-        db.rollback()
+        repository.rollback()
 
         logger.exception(
             "Database commit failed."
@@ -133,21 +143,3 @@ def save_jobs_to_db(
         "failed": failed,
         "new_jobs": inserted,
     }
-
-
-def showdetails(job_id: int, db: Session) -> Job:
-    """Return a job by ID."""
-
-    job = (
-        db.query(Job)
-        .filter(Job.id == job_id)
-        .first()
-    )
-
-    if job is None:
-        raise HTTPException(
-            status_code=404,
-            detail="Job not found.",
-        )
-
-    return job

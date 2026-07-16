@@ -13,7 +13,6 @@ class Settings(BaseSettings):
 
     database_url: PostgresDsn
     
-    findwork_api_key: str
     
     allowed_origins: list[str] = [
         "http://localhost:3000",

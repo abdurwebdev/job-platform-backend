@@ -3,11 +3,16 @@ from app.scraper.himalyas import HimalayasScraper
 from app.scraper.jobicy import JobicyScraper
 from app.scraper.remoteok import RemoteOkScraper
 from app.scraper.arbeitnow import ArbeitnowScraper
+from app.scraper.nomads import WorkingNomadsScraper
+from app.scraper.themuse import TheMuseScraper
+
 
 SCRAPERS = [
     HimalayasScraper,
     JobicyScraper,
     RemoteOkScraper,
     RemotiveScraper,
-    ArbeitnowScraper
+    ArbeitnowScraper,
+    WorkingNomadsScraper,
+    TheMuseScraper,
 ]

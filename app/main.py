@@ -10,6 +10,8 @@ from app.core.logger import logger
 from app.routes.job_routes import router as job_router
 from app.config.config import settings
 
+from app.middleware.request_id import RequestIDMiddleware
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("Starting up backend application...")
@@ -40,6 +42,7 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+app.add_middleware(RequestIDMiddleware)
 # Updated CORS settings to support both local and production traffic
 app.add_middleware(
     CORSMiddleware,

@@ -7,6 +7,8 @@ from app.schemas.job_schema import (
 )
 from app.scraper.orchestrator import run_all_scrapers
 from app.services.job_service import JobService
+from app.core.logger import logger
+
 
 router = APIRouter(
     prefix="/api/job",
@@ -38,9 +40,8 @@ def get_all_jobs(
     response: Response,
     service: JobService = Depends(get_job_service),
 ):
-    response.headers["Cache-Control"] = (
-        "no-store, no-cache, must-revalidate, max-age=0"
-    )
+    logger.info("Fetching all Jobs")
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
     response.headers["Pragma"] = "no-cache"
 
     return service.get_all_jobs()

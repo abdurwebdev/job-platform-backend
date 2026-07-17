@@ -11,15 +11,15 @@ from app.scraper.hackernews import HackerNewsHiringScraper
 from app.scraper.lever import LeverScraper
 
 SCRAPERS = [
-    # HimalayasScraper,
-    # JobicyScraper,
-    # RemoteOkScraper,
-    # RemotiveScraper,
-    # ArbeitnowScraper,
-    # WorkingNomadsScraper,
-    # TheMuseScraper,
-    # WeWorkRemotelyScraper,
-    # HackerNewsHiringScraper
+    HimalayasScraper,
+    JobicyScraper,
+    RemoteOkScraper,
+    RemotiveScraper,
+    ArbeitnowScraper,
+    WorkingNomadsScraper,
+    TheMuseScraper,
+    WeWorkRemotelyScraper,
+    HackerNewsHiringScraper,
     partial(LeverScraper, company_slug="leverdemo", company_name="Lever Demo"), 
     
 ]

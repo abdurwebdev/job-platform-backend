@@ -156,21 +156,15 @@ def parse_datetime(date_str: str) -> datetime:
     """
     Parse ISO datetime safely with timezone normalization.
     """
-
     if not date_str:
-        datetime.now(timezone.utc)()
+        return datetime.now(timezone.utc)
 
     try:
-        # Fix incomplete timezone: +05 -> +05:00
         if re.search(r"[+-]\d{2}$", date_str):
             date_str = f"{date_str}:00"
-
         return datetime.fromisoformat(date_str)
-
     except ValueError:
-        datetime.now(timezone.utc)()
-
-
+        return datetime.now(timezone.utc)
 def parse_timestamp(timestamp) -> datetime:
     """
     Parse Unix timestamp.

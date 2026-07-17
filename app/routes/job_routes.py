@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, Response
+from typing import Optional
 
 from app.dependencies import get_job_service
 from app.schemas.job_schema import (
@@ -8,7 +9,7 @@ from app.schemas.job_schema import (
 from app.scraper.orchestrator import run_all_scrapers
 from app.services.job_service import JobService
 from app.core.logger import logger
-
+from app.schemas.job_schema import PaginatedJobsResponse
 
 router = APIRouter(
     prefix="/api/job",
@@ -31,17 +32,21 @@ def scrape_jobs(
 
     return scrape_reports
 
-@router.get("/all")
+
+# routes/job_routes.py
+@router.get("/all", response_model=PaginatedJobsResponse)
 def get_all_jobs(
     page: int = 1,
     limit: int = 20,
-    search: str = None,
-    service: JobService = Depends(get_job_service)
+    search: Optional[str] = None,  # also: use Optional[str], not bare str
+    service: JobService = Depends(get_job_service),
 ):
     skip = (page - 1) * limit
     jobs = service.repository.get_paginated_jobs(skip, limit, search)
     total = service.repository.count_jobs(search)
     return {"jobs": jobs, "total": total, "page": page, "limit": limit}
+
+
 @router.get(
     "/job-detail/{jobId}",
     response_model=JobDetailOverview,

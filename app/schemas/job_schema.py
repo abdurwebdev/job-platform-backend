@@ -21,3 +21,10 @@ class JobUIOverviewSchema(BaseModel):
  
 class JobDetailOverview(JobUIOverviewSchema):
     description: Optional[str] = None
+    
+# schemas/job_schema.py — add this
+class PaginatedJobsResponse(BaseModel):
+    jobs: List[JobUIOverviewSchema]
+    total: int
+    page: int
+    limit: int

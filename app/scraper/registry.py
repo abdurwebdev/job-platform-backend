@@ -8,7 +8,7 @@ from app.scraper.nomads import WorkingNomadsScraper
 from app.scraper.themuse import TheMuseScraper
 from app.scraper.wwremotely import WeWorkRemotelyScraper
 from app.scraper.hackernews import HackerNewsHiringScraper
-from app.scraper.lever import LeverScraper
+
 
 SCRAPERS = [
     HimalayasScraper,

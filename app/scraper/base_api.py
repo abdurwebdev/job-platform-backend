@@ -16,7 +16,7 @@ class BaseApiScraper(BaseScraper):
     def scrape(self) -> List[StandardJob]:
         response = get_json(
             self.url,
-            self.source_name,   # <-- Pass scraper name
+            scraper_name=self.source_name,
         )
 
         if response is None:

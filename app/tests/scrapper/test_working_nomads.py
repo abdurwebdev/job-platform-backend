@@ -14,4 +14,4 @@ def test_maps_basic_job():
     })
     assert job.title == "Backend Engineer"
     assert job.tags == ["python", "fastapi"]
-    assert job.description == "Build things"
+    assert job.description == "<p>Build things</p>"

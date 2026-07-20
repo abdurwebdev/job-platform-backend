@@ -15,25 +15,6 @@ class StandardJob(BaseModel):
   candidate_required_location : str
   description : str
   source : str
-  
-  
-
-
-
-# from dataclasses import dataclass
-# from typing import Optional
-
-# @dataclass
-# class StandardJob:
-#   title:str
-#   url:str
-#   company_name:str
-#   company_logo:Optional[str]
-#   category:str
-#   tags:list[str]
-#   job_type:str
-#   publication_date:str
-#   salary:str
-#   candidate_required_location:str
-#   description:str
-#   source:str
+  remote : bool = False
+  location : Optional[str] = None
+  external_id : Optional[str] = None

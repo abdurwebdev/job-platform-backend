@@ -20,9 +20,13 @@ def _normalize(text: str) -> str:
     return text.strip()
 
 
-def _dedupe_key(job: StandardJob) -> tuple[str, str]:
-    return (_normalize(job.company_name), _normalize(job.title))
-
+def _dedupe_key(job: StandardJob) -> tuple[str, str, str]:
+    return (
+        _normalize(job.company_name),
+        _normalize(job.title),
+        _normalize(job.location or job.candidate_required_location or ""),
+    )
+    
 
 def deduplicate_jobs(jobs: list[StandardJob]) -> list[StandardJob]:
     """
@@ -51,7 +55,7 @@ def deduplicate_jobs(jobs: list[StandardJob]) -> list[StandardJob]:
             continue
 
         key = _dedupe_key(job)
-        if key in seen_keys and key != ("", ""):
+        if key in seen_keys and key != ("", "",""):
             cross_source_duplicates += 1
             continue
 

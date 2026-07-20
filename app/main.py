@@ -60,5 +60,5 @@ app.include_router(health_router)
 @app.get("/")
 def home():
     return {
-        "message": "Welcome to job portaliessss"
+        "message": "Welcome to job portal"
     }

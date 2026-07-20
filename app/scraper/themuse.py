@@ -29,7 +29,11 @@ class TheMuseScraper(BaseApiScraper):
         jobs: List[StandardJob] = []
 
         for page in range(1, self.MAX_PAGES + 1):
-            response = get_json(self._build_url(page))
+            
+            response = get_json(
+    self._build_url(page),
+    scraper_name=self.source_name,
+)
             if not response:
                 break
 

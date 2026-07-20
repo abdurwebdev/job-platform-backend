@@ -14,7 +14,10 @@ class BaseApiScraper(BaseScraper):
         self.source_name = source_name
 
     def scrape(self) -> List[StandardJob]:
-        response = get_json(self.url)
+        response = get_json(
+            self.url,
+            self.source_name,   # <-- Pass scraper name
+        )
 
         if response is None:
             return []
@@ -30,7 +33,6 @@ class BaseApiScraper(BaseScraper):
         jobs: List[StandardJob] = []
 
         for item in data:
-
             job = self.map_item(item)
 
             if job is not None:
@@ -40,8 +42,4 @@ class BaseApiScraper(BaseScraper):
 
     @abstractmethod
     def map_item(self, item: Any) -> Optional[StandardJob]:
-        """
-        Convert one API response item into a StandardJob.
-        Return None if the item should be skipped.
-        """
         pass

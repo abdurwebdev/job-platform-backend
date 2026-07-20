@@ -19,7 +19,5 @@ SCRAPERS = [
     WorkingNomadsScraper,
     TheMuseScraper,
     WeWorkRemotelyScraper,
-    HackerNewsHiringScraper,
-    partial(LeverScraper, company_slug="leverdemo", company_name="Lever Demo"), 
-    
+    HackerNewsHiringScraper, 
 ]

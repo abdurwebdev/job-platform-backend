@@ -8,6 +8,7 @@ from sqlalchemy.sql import text  # Used to safely ping the DB
 from app.database.database import Base, engine
 from app.core.logger import logger
 from app.routes.job_routes import router as job_router
+from app.routes.health_routes import router as health_router
 from app.config.config import settings
 
 from app.middleware.request_id import RequestIDMiddleware
@@ -54,6 +55,7 @@ app.add_middleware(
 )
 
 app.include_router(job_router)
+app.include_router(health_router)
 
 @app.get("/")
 def home():

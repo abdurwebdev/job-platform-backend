@@ -33,10 +33,10 @@ DIRECT_SCRAPERS = [
 # any that come back empty/404 before you rely on the count in a demo.
 
 GREENHOUSE_COMPANIES = [
+    # --- confirmed alive as of the last verify_sources.py run ---------
     ("anthropic", "Anthropic"),
     ("airbnb", "Airbnb"),
     ("stripe", "Stripe"),
-    ("doordash", "DoorDash"),
     ("robinhood", "Robinhood"),
     ("coinbase", "Coinbase"),
     ("gitlab", "GitLab"),
@@ -44,7 +44,6 @@ GREENHOUSE_COMPANIES = [
     ("discord", "Discord"),
     ("cloudflare", "Cloudflare"),
     ("asana", "Asana"),
-    ("notion", "Notion"),
     ("pinterest", "Pinterest"),
     ("lyft", "Lyft"),
     ("affirm", "Affirm"),
@@ -55,30 +54,57 @@ GREENHOUSE_COMPANIES = [
     ("instacart", "Instacart"),
     ("brex", "Brex"),
     ("mixpanel", "Mixpanel"),
-    ("docusign", "DocuSign"),
     ("twitch", "Twitch"),
-    ("credit-karma", "Credit Karma"),
-    ("webflow", "Webflow"),
+    # removed as dead per last verify_sources.py run:
+    # doordash, notion, docusign, credit-karma
+
+    # --- confirmed alive per your latest verify_sources.py run --------
+    ("samsara", "Samsara"),
+    ("roblox", "Roblox"),
+    ("reddit", "Reddit"),
+    ("squarespace", "Squarespace"),
+    ("faire", "Faire"),
+    ("flexport", "Flexport"),
+    ("verkada", "Verkada"),
+    ("checkr", "Checkr"),
+    ("mongodb", "MongoDB"),
+    ("circleci", "CircleCI"),
+    ("launchdarkly", "LaunchDarkly"),
+    ("datadog", "Datadog"),
+    ("newrelic", "New Relic"),
+    ("fastly", "Fastly"),
+    ("twilio", "Twilio"),
+    ("amplitude", "Amplitude"),
+    ("cultureamp", "Culture Amp"),
+    # removed as dead per your latest verify_sources.py run:
+    # databricks, retool, ramp, rippling, sourcegraph, hashicorp,
+    # grafana-labs, toasttab, benchling, deel, vanta, gong, postmanlabs,
+    # confluent, snowflake, mondaycom, miro, canva, github, sendgrid,
+    # zendesk, outreach
+
+    # --- UNVERIFIED, second batch: run verify_sources.py ONE more time
+    # tonight and prune any DEAD ones from this batch too. You're at 49
+    # confirmed sources without these — too close to "50+" to risk it,
+    # so this batch exists purely as a buffer.
+    ("okta", "Okta"),
+    ("zscaler", "Zscaler"),
+    ("betterment", "Betterment"),
 ]
 
 LEVER_COMPANIES = [
+    # --- confirmed alive as of the last verify_sources.py run ---------
     ("leverdemo", "Lever Demo"),
-    ("netlify", "Netlify"),
-    ("eventbrite", "Eventbrite"),
-    ("plaid", "Plaid"),
-    ("branch", "Branch"),
-    ("carta", "Carta"),
-    ("segment", "Segment"),
-    ("attentive", "Attentive"),
-    ("grammarly", "Grammarly"),
-    ("scaleai", "Scale AI"),
-    ("clever", "Clever"),
-    ("loom", "Loom"),
-    ("close", "Close"),
-    ("clearbit", "Clearbit"),
-    ("getaround", "Getaround"),
-    ("framer", "Framer"),
-    ("shield-ai", "Shield AI"),
+    # removed as dead (first pruning pass):
+    # netlify, eventbrite, plaid, branch, carta, segment, attentive,
+    # grammarly, scaleai, clever, loom, close, clearbit, getaround,
+    # framer, shield-ai
+    # removed as dead (second pruning pass, your latest verify run):
+    # qualtrics, box, betterup, kraken, chainalysis
+    #
+    # Lever's public postings API has very few companies still on it
+    # publicly — Greenhouse is genuinely the better config-driven source
+    # for scale right now. Worth saying this plainly in the demo rather
+    # than padding this list with more guesses.
 ]
 
 # de-dupe accidental repeats in the config lists themselves

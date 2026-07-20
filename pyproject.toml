@@ -35,5 +35,6 @@ dependencies = [
     "urllib3==2.7.0",
     "bleach==6.4.0",
     "feedparser==6.0.12",
-    "contextvars==2.4"
+    "contextvars==2.4",
+    "httpx==0.28.1"
 ]

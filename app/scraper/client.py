@@ -1,5 +1,5 @@
 from app.core.http_client import http_client
-from requests.exceptions import RequestException
+import httpx
 from app.core.logger import logger
 from typing import Any
 
@@ -22,6 +22,6 @@ def get_json(url: str,scraper_name:str):
 
         return response.json()
 
-    except RequestException as e:
+    except httpx.HTTPError as e:
         logger.exception(f"Failed to fetch {url}: {e}")
         return None

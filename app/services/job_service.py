@@ -1,4 +1,4 @@
-from typing import Dict, List
+from typing import Dict, List, Optional
 import time
 
 from fastapi import HTTPException
@@ -15,6 +15,17 @@ class JobService:
 
     def get_all_jobs(self) -> List[Job]:
         return self.repository.get_all_jobs()
+
+    def get_paginated_jobs(
+        self,
+        page: int,
+        limit: int,
+        search: Optional[str] = None,
+    ) -> Dict:
+        skip = (page - 1) * limit
+        jobs = self.repository.get_paginated_jobs(skip, limit, search)
+        total = self.repository.count_jobs(search)
+        return {"jobs": jobs, "total": total, "page": page, "limit": limit}
 
     def get_job_details(self, job_id: int) -> Job:
         job = self.repository.get_job_by_id(job_id)

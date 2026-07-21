@@ -44,7 +44,7 @@ def deduplicate_jobs(jobs: list[StandardJob]) -> list[StandardJob]:
     """
     unique_jobs: list[StandardJob] = []
     seen_urls: set[str] = set()
-    seen_keys: set[tuple[str, str]] = set()
+    seen_keys: set[tuple[str, str,str]] = set()
 
     url_duplicates = 0
     cross_source_duplicates = 0

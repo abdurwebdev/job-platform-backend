@@ -1,17 +1,17 @@
-from fastapi import APIRouter, Depends, Response
+from fastapi import APIRouter, Depends, Query
 from typing import Optional
 
 from app.dependencies import get_job_service, get_health_service
 from app.schemas.job_schema import (
     JobDetailOverview,
-    JobUIOverviewSchema,
+    PaginatedJobsResponse,
 )
+from app.schemas.scrape_schema import JobScrapeResponse
 from app.scraper.orchestrator import run_all_scrapers
 from app.scraper.deduplicate import deduplicate_jobs
 from app.services.job_service import JobService
 from app.services.health_service import HealthService
 from app.core.logger import logger
-from app.schemas.job_schema import PaginatedJobsResponse
 
 router = APIRouter(
     prefix="/api/job",
@@ -19,7 +19,7 @@ router = APIRouter(
 )
 
 
-@router.post("/scrape")
+@router.post("/scrape", response_model=JobScrapeResponse)
 def scrape_jobs(
     service: JobService = Depends(get_job_service),
     health_service: HealthService = Depends(get_health_service),
@@ -54,30 +54,36 @@ def scrape_jobs(
         "scraped_total": before,
         "after_dedup": len(all_jobs),
         "save_summary": save_summary,
-        "reports": scrape_reports,
+        "reports": [
+            {
+                "source": r.source,
+                "success": r.success,
+                "count": r.count,
+                "duration_ms": r.duration_ms,
+                "error": r.error,
+            }
+            for r in scrape_reports
+        ],
     }
 
 
-# routes/job_routes.py
 @router.get("/all", response_model=PaginatedJobsResponse)
 def get_all_jobs(
-    page: int = 1,
-    limit: int = 20,
-    search: Optional[str] = None,  # also: use Optional[str], not bare str
+    page: int = Query(1, ge=1, description="1-indexed page number"),
+    limit: int = Query(20, ge=1, le=100, description="Results per page, max 100"),
+    search: Optional[str] = None,
     service: JobService = Depends(get_job_service),
 ):
-    skip = (page - 1) * limit
-    jobs = service.repository.get_paginated_jobs(skip, limit, search)
-    total = service.repository.count_jobs(search)
-    return {"jobs": jobs, "total": total, "page": page, "limit": limit}
+    return service.get_paginated_jobs(page, limit, search)
 
 
 @router.get(
-    "/job-detail/{jobId}",
+    "/job-detail/{job_id}",
     response_model=JobDetailOverview,
+    responses={404: {"description": "Job not found"}},
 )
 def get_job_details(
-    jobId: int,
+    job_id: int,
     service: JobService = Depends(get_job_service),
 ):
-    return service.get_job_details(jobId)
+    return service.get_job_details(job_id)

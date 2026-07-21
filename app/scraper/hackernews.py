@@ -1,6 +1,6 @@
 from typing import Any, List, Optional
 
-import requests
+import httpx
 
 from app.scraper.base_api import BaseApiScraper
 from app.scraper.job_factory import build_job
@@ -33,7 +33,7 @@ class HackerNewsHiringScraper(BaseApiScraper):
             "tags": "story,author_whoishiring",
             "hitsPerPage": 1,
         }
-        resp = requests.get(self.url, params=params, timeout=15)
+        resp = httpx.get(self.url, params=params, timeout=15)
         resp.raise_for_status()
         hits = resp.json().get("hits", [])
         return hits[0]["objectID"] if hits else None
@@ -43,7 +43,7 @@ class HackerNewsHiringScraper(BaseApiScraper):
         if not thread_id:
             return []
 
-        resp = requests.get(ALGOLIA_ITEM_URL.format(item_id=thread_id), timeout=15)
+        resp = httpx.get(ALGOLIA_ITEM_URL.format(item_id=thread_id), timeout=15)
         resp.raise_for_status()
         return resp.json().get("children", []) or []
 

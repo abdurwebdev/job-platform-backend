@@ -12,6 +12,11 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
 
     database_url: PostgresDsn
+
+    # Shared secret the GitHub Actions cron job sends via the
+    # X-Scrape-Secret header. If left empty, the /scrape endpoint stays
+    # open (fine for local dev, not recommended once this is public).
+    scrape_secret: str = ""
     
     
     allowed_origins: list[str] = [

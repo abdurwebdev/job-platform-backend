@@ -7,10 +7,13 @@ from app.scraper.deduplicate import deduplicate_jobs
 from typing import List
 
 
-def run_all_scrapers() -> List[ScrapeResult]:
+def run_scrapers(scraper_classes: List) -> List[ScrapeResult]:
+    """Run an arbitrary subset of scrapers (a "batch"). This is what makes
+    it possible to run 51 sources across several short calls instead of
+    one long call that times out on a serverless platform."""
     all_scrape_results: List[ScrapeResult] = []
 
-    for scraper_class in SCRAPERS:
+    for scraper_class in scraper_classes:
         scraper = scraper_class()
         start_time = time.perf_counter()
 
@@ -55,3 +58,10 @@ def run_all_scrapers() -> List[ScrapeResult]:
         logger.warning(f"Failed scrapers: {', '.join(failed)}")
 
     return all_scrape_results
+
+
+def run_all_scrapers() -> List[ScrapeResult]:
+    """Kept for backwards compatibility / local dev. Runs every source in
+    one call — fine locally, but on Vercel this is the call that times out.
+    Prefer run_scrapers(batch) via the /api/job/scrape?batch_index=... route."""
+    return run_scrapers(SCRAPERS)

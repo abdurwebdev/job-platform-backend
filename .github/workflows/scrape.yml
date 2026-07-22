@@ -1,0 +1,50 @@
+name: Scheduled Job Scraper
+
+# Runs every 6 hours, and can also be triggered manually from the
+# Actions tab (useful right before a demo to refresh the data).
+on:
+  schedule:
+    - cron: "0 */6 * * *"
+  workflow_dispatch: {}
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run every batch sequentially
+        env:
+          BACKEND_URL: ${{ secrets.BACKEND_URL }}
+          SCRAPE_SECRET: ${{ secrets.SCRAPE_SECRET }}
+          BATCH_SIZE: 6
+        run: |
+          set -e
+
+          echo "Asking the backend how many batches there are..."
+          meta=$(curl -sf "$BACKEND_URL/api/job/scrape/meta?batch_size=$BATCH_SIZE")
+          echo "$meta"
+
+          total_batches=$(echo "$meta" | jq -r ".total_batches")
+          total_sources=$(echo "$meta" | jq -r ".total_sources")
+          echo "total_sources=$total_sources total_batches=$total_batches batch_size=$BATCH_SIZE"
+
+          for (( i=0; i<total_batches; i++ )); do
+            echo "--- Batch $i / $((total_batches - 1)) ---"
+
+            http_status=$(curl -s -o response_body.json -w "%{http_code}" -X POST \
+              "$BACKEND_URL/api/job/scrape?batch_index=$i&batch_size=$BATCH_SIZE" \
+              -H "X-Scrape-Secret: $SCRAPE_SECRET")
+
+            cat response_body.json
+            echo ""
+
+            if [ "$http_status" -ge 400 ]; then
+              echo "Batch $i failed with HTTP $http_status"
+              exit 1
+            fi
+
+            # Small gap so we're not hammering the backend/DB back-to-back,
+            # and so any per-host rate limiting inside a batch has time to settle.
+            sleep 5
+          done
+
+          echo "All $total_batches batches completed successfully."

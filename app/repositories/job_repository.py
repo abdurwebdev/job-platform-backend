@@ -53,7 +53,9 @@ class JobRepository:
             query = query.filter(func.lower(Job.job_type) == job_type.lower())
 
         if location:
-            query = query.filter(Job.candidate_required_location.ilike(f"%{location}%"))
+            query = query.filter(
+                Job.candidate_required_location.ilike(f"%{location}%")
+            )
 
         return query
 
@@ -63,9 +65,12 @@ class JobRepository:
 
         if sort == "salary":
             numeric_salary = func.nullif(
-                func.regexp_replace(Job.salary, "[^0-9]", "", "g"), ""
+                func.regexp_replace(Job.salary, "[^0-9]", "", "g"),
+                "",
             )
-            return query.order_by(cast(numeric_salary, BigInteger).desc().nullslast())
+            return query.order_by(
+                cast(numeric_salary, BigInteger).desc().nullslast()
+            )
 
         return query.order_by(Job.publication_date.desc().nullslast())
 
@@ -90,20 +95,31 @@ class JobRepository:
         job_type: Optional[str] = None,
         location: Optional[str] = None,
     ) -> int:
-        return self._filtered_query(search, category, job_type, location).count()
+        return self._filtered_query(
+            search,
+            category,
+            job_type,
+            location,
+        ).count()
 
     def bulk_upsert_jobs(self, job_dicts: List[dict]) -> int:
-        """Insert all rows in one statement, skip rows whose url already exists.
-        Returns the number of rows actually inserted."""
+        """
+        Insert all rows in one statement.
+        Skip rows whose URL already exists.
+        Returns the number of rows actually inserted.
+        """
         if not job_dicts:
             return 0
 
         try:
             stmt = pg_insert(Job).values(job_dicts)
             stmt = stmt.on_conflict_do_nothing(index_elements=["url"])
+
             result = self.db.execute(stmt)
-            self.db.flush()  # Flush changes to ensure they're registered
+            self.db.commit()
+
             return result.rowcount
+
         except Exception as e:
             self.db.rollback()
             raise RuntimeError(f"Bulk upsert failed: {str(e)}") from e

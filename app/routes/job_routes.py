@@ -23,17 +23,13 @@ router = APIRouter(
 
 
 def _check_scrape_secret(x_scrape_secret: Optional[str]) -> None:
-    """If SCRAPE_SECRET is configured, require callers to send it. Keeps
-    randos from triggering a 51-source scrape by hitting a public URL."""
+    """If SCRAPE_SECRET is configured, require callers to send it."""
     if settings.scrape_secret and x_scrape_secret != settings.scrape_secret:
         raise HTTPException(status_code=401, detail="Missing or invalid X-Scrape-Secret header.")
 
 
 @router.get("/scrape/meta")
 def scrape_meta(batch_size: int = Query(6, ge=1)):
-    """Lets the GitHub Actions workflow ask 'how many batches are there'
-    instead of hardcoding the source count, which will drift as sources
-    are added/removed from the registry."""
     total_sources = len(SCRAPERS)
     return {
         "total_sources": total_sources,
@@ -47,8 +43,7 @@ def scrape_jobs(
     batch_index: Optional[int] = Query(
         None,
         ge=0,
-        description="0-based batch to run. Omit to run ALL sources in one call "
-        "(fine locally, likely to time out on Vercel).",
+        description="0-based batch to run. Omit to run ALL sources in one call.",
     ),
     batch_size: Optional[int] = Query(
         None, ge=1, description="Sources per batch. Required if batch_index is set."
@@ -80,10 +75,15 @@ def scrape_jobs(
     else:
         scrapers_to_run = SCRAPERS
 
-    scrape_reports = run_scrapers(scrapers_to_run)
+    try:
+        scrape_reports = run_scrapers(scrapers_to_run)
+    except Exception as e:
+        logger.critical(f"Scraper orchestration failed: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Scraping failed: {str(e)}"
+        )
 
-    # Persist per-source health (success/failure, count, duration) so
-    # GET /api/health/scrapers reflects this run, not stale data.
     try:
         health_service.record_run(scrape_reports)
     except Exception:
@@ -117,12 +117,11 @@ def scrape_jobs(
     }
 
 
-# routes/job_routes.py
 @router.get("/all", response_model=PaginatedJobsResponse)
 def get_all_jobs(
     page: int = 1,
     limit: int = 20,
-    search: Optional[str] = None,  # also: use Optional[str], not bare str
+    search: Optional[str] = None,
     service: JobService = Depends(get_job_service),
 ):
     skip = (page - 1) * limit

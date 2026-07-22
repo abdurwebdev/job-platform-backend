@@ -46,16 +46,12 @@ class JobRepository:
         if search:
             query = query.filter(Job.title.ilike(f"%{search}%"))
 
-        # Case-insensitive exact match: the frontend sends dropdown values,
-        # not free text, so ilike-with-wildcards isn't the right tool here.
         if category:
             query = query.filter(func.lower(Job.category) == category.lower())
 
         if job_type:
             query = query.filter(func.lower(Job.job_type) == job_type.lower())
 
-        # Location stays a "contains" match since values like "Remote" vs
-        # "Remote - US" vs "Worldwide" don't line up as clean exact matches.
         if location:
             query = query.filter(Job.candidate_required_location.ilike(f"%{location}%"))
 
@@ -66,18 +62,11 @@ class JobRepository:
             return query.order_by(Job.title.asc())
 
         if sort == "salary":
-            # Salary is free-text ("$90k-$120k", "Not specified", "DOE", ...),
-            # not a number, so this is a best-effort sort: strip everything
-            # but digits and order by that. A range like "90000-120000"
-            # becomes "90000120000" (digits concatenated), so it's not a
-            # precise numeric ranking — but it's stable and roughly groups
-            # higher numbers together, which is enough for a filter dropdown.
             numeric_salary = func.nullif(
                 func.regexp_replace(Job.salary, "[^0-9]", "", "g"), ""
             )
             return query.order_by(cast(numeric_salary, BigInteger).desc().nullslast())
 
-        # default: newest first
         return query.order_by(Job.publication_date.desc().nullslast())
 
     def get_paginated_jobs(
@@ -109,7 +98,12 @@ class JobRepository:
         if not job_dicts:
             return 0
 
-        stmt = pg_insert(Job).values(job_dicts)
-        stmt = stmt.on_conflict_do_nothing(index_elements=["url"])
-        result = self.db.execute(stmt)
-        return result.rowcount
+        try:
+            stmt = pg_insert(Job).values(job_dicts)
+            stmt = stmt.on_conflict_do_nothing(index_elements=["url"])
+            result = self.db.execute(stmt)
+            self.db.flush()  # Flush changes to ensure they're registered
+            return result.rowcount
+        except Exception as e:
+            self.db.rollback()
+            raise RuntimeError(f"Bulk upsert failed: {str(e)}") from e

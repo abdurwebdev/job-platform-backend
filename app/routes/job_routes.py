@@ -122,29 +122,12 @@ def scrape_jobs(
 def get_all_jobs(
     page: int = 1,
     limit: int = 20,
-    search: Optional[str] = None,
-    category: Optional[str] = None,
-    job_type: Optional[str] = Query(None, alias="type"),
-    location: Optional[str] = None,
-    sort: Optional[str] = None,
+    search: Optional[str] = None,  # also: use Optional[str], not bare str
     service: JobService = Depends(get_job_service),
 ):
     skip = (page - 1) * limit
-    jobs = service.repository.get_paginated_jobs(
-        skip,
-        limit,
-        search=search,
-        category=category,
-        job_type=job_type,
-        location=location,
-        sort=sort,
-    )
-    total = service.repository.count_jobs(
-        search=search,
-        category=category,
-        job_type=job_type,
-        location=location,
-    )
+    jobs = service.repository.get_paginated_jobs(skip, limit, search)
+    total = service.repository.count_jobs(search)
     return {"jobs": jobs, "total": total, "page": page, "limit": limit}
 
 

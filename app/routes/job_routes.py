@@ -3,10 +3,7 @@ from fastapi import APIRouter, Depends, Response, Query, Header, HTTPException
 from typing import Optional
 
 from app.dependencies import get_job_service, get_health_service
-from app.schemas.job_schema import (
-    JobDetailOverview,
-    JobUIOverviewSchema,
-)
+from app.schemas.job_schema import JobDetailOverview
 from app.scraper.orchestrator import run_scrapers
 from app.scraper.registry import SCRAPERS
 from app.scraper.deduplicate import deduplicate_jobs
@@ -137,11 +134,6 @@ def get_all_jobs(
         location=location,
         sort=sort,
     )
-    skip = (page - 1) * limit
-    jobs = service.repository.get_paginated_jobs(skip, limit, search)
-    total = service.repository.count_jobs(search)
-    return {"jobs": jobs, "total": total, "page": page, "limit": limit}
-
 
 @router.get(
     "/job-detail/{jobId}",

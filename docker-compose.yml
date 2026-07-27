@@ -1,0 +1,38 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: rozgar
+      POSTGRES_PASSWORD: rozgar
+      POSTGRES_DB: rozgar
+    ports:
+      - "5432:5432"
+    volumes:
+      - rozgar_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rozgar -d rozgar"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql://rozgar:rozgar@db:5432/rozgar
+      SCRAPE_SECRET: ${SCRAPE_SECRET:-}
+      DEBUG: "true"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      # Bind-mount source so `--reload` picks up code changes without
+      # rebuilding the image while you're iterating locally.
+      - ./app:/app/app
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+
+volumes:
+  rozgar_pg_data:

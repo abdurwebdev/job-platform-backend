@@ -25,7 +25,9 @@ router = APIRouter(
 def _check_scrape_secret(x_scrape_secret: Optional[str]) -> None:
     """If SCRAPE_SECRET is configured, require callers to send it."""
     if settings.scrape_secret and x_scrape_secret != settings.scrape_secret:
-        raise HTTPException(status_code=401, detail="Missing or invalid X-Scrape-Secret header.")
+        raise HTTPException(
+            status_code=401, detail="Missing or invalid X-Scrape-Secret header."
+        )
 
 
 @router.get("/scrape/meta")
@@ -57,7 +59,8 @@ def scrape_jobs(
     if batch_index is not None:
         if batch_size is None:
             raise HTTPException(
-                status_code=400, detail="batch_size is required when batch_index is given."
+                status_code=400,
+                detail="batch_size is required when batch_index is given.",
             )
         start = batch_index * batch_size
         end = start + batch_size
@@ -79,10 +82,7 @@ def scrape_jobs(
         scrape_reports = run_scrapers(scrapers_to_run)
     except Exception as e:
         logger.critical(f"Scraper orchestration failed: {e}", exc_info=True)
-        raise HTTPException(
-            status_code=500,
-            detail=f"Scraping failed: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Scraping failed: {str(e)}")
 
     try:
         health_service.record_run(scrape_reports)
@@ -122,8 +122,21 @@ def get_all_jobs(
     page: int = 1,
     limit: int = 20,
     search: Optional[str] = None,
+    category: Optional[str] = None,
+    location: Optional[str] = None,
+    sort: Optional[str] = None,
+    job_type: Optional[str] = Query(None, alias="type"),
     service: JobService = Depends(get_job_service),
 ):
+    return service.get_paginated_jobs(
+        page=page,
+        limit=limit,
+        search=search,
+        category=category,
+        job_type=job_type,
+        location=location,
+        sort=sort,
+    )
     skip = (page - 1) * limit
     jobs = service.repository.get_paginated_jobs(skip, limit, search)
     total = service.repository.count_jobs(search)

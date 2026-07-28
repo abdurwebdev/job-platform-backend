@@ -25,6 +25,12 @@ services:
       DATABASE_URL: postgresql://rozgar:rozgar@db:5432/rozgar
       SCRAPE_SECRET: ${SCRAPE_SECRET:-}
       DEBUG: "true"
+      # Override these in a .env file for local testing if you don't want
+      # to wait a full interval to see the scheduler fire — e.g. set
+      # SCRAPE_INTERVAL_HOURS=0.05 (3 minutes) while testing, then remove
+      # the override before deploying.
+      SCHEDULER_ENABLED: ${SCHEDULER_ENABLED:-true}
+      SCRAPE_INTERVAL_HOURS: ${SCRAPE_INTERVAL_HOURS:-6}
     depends_on:
       db:
         condition: service_healthy

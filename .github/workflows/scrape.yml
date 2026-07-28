@@ -1,8 +1,12 @@
 name: Scheduled Job Scraper
 
+# Scheduling moved in-container as of 2026-07-28 — see app/scraper/scheduler.py.
+# The backend now scrapes on its own interval from inside the running
+# container, so this cron trigger is disabled to avoid double-scraping the
+# same sources. Kept as workflow_dispatch only, in case we ever need to
+# manually kick off a full batched run from CI (e.g. to backfill after an
+# outage) without touching the running container.
 on:
-  schedule:
-    - cron: "0 */6 * * *"
   workflow_dispatch: {}
 
 jobs:

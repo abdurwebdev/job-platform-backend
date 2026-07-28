@@ -17,8 +17,14 @@ class Settings(BaseSettings):
     # X-Scrape-Secret header. If left empty, the /scrape endpoint stays
     # open (fine for local dev, not recommended once this is public).
     scrape_secret: str = ""
-    
-    
+
+    # In-container scheduler: when True, a background thread runs
+    # run_and_save_jobs() on a loop instead of relying on an external
+    # trigger (GitHub Actions). Turn this off for local dev if you'd
+    # rather trigger scrapes manually via POST /api/job/scrape.
+    scheduler_enabled: bool = True
+    scrape_interval_hours: float = 6
+
     allowed_origins: list[str] = [
         "http://localhost:3000",
         "https://job-platform-frontend-62ud.vercel.app",

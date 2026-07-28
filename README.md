@@ -94,15 +94,24 @@ legitimately go down or change their page structure over time.
 
 ## Scheduling
 
-Scraping runs every 6 hours via **GitHub Actions** (`.github/workflows/scrape.yml`),
-not a cron job on the Codeaza server. The workflow calls `/job/scrape/meta`
-to find out how many batches exist, then POSTs each batch in sequence with a
-short delay between them — this keeps any single HTTP request short and
-gives per-batch retry/failure visibility in the Actions log, at the cost of
-not being "infrastructure we own" in the way a server-side scheduler would
-be. Worth raising with Muhammad Asim whether this is an acceptable
-long-term answer for Week 4 or whether it should move server-side now that
-the app is containerized.
+Scraping runs automatically from **inside the running container** — a
+background thread (`app/scraper/scheduler.py`) started in `main.py`'s
+lifespan hook. On startup it waits 60s, then runs the full scrape-and-save
+pipeline (`run_and_save_jobs()` in `orchestrator.py`) every
+`SCRAPE_INTERVAL_HOURS` (default 6). No external trigger required — this
+is why the app needs to run as a long-lived container rather than
+serverless functions.
+
+`SCHEDULER_ENABLED` and `SCRAPE_INTERVAL_HOURS` are both env vars (see
+`.env.example`) — useful to override locally (e.g. a short interval) while
+testing, without touching code.
+
+The old GitHub Actions cron (`.github/workflows/scrape.yml`) that used to
+trigger scraping externally is **disabled** as of the move to in-container
+scheduling — its `schedule:` trigger is commented out, but the file is
+kept with `workflow_dispatch` only, in case a manual full-batch run from
+CI is ever useful (e.g. backfilling after an outage) without touching the
+live container.
 
 ## Scraper sources
 
@@ -141,9 +150,12 @@ python -m pytest app/tests/ -v
 
 ## Known gaps / next up
 
-- No CI workflow runs tests automatically yet — `.github/workflows/` only
-  has the scrape cron, nothing gates PRs on `pytest` passing
-- Scheduling lives in GitHub Actions, not on the Codeaza server (see above)
+- No CI workflow runs tests automatically yet — nothing gates PRs on
+  `pytest` passing
+- The in-container scheduler is a plain daemon thread — fine for a single
+  container, but if this ever runs as multiple replicas, every replica
+  would scrape independently and you'd get duplicate runs. Not an issue
+  at current scale; worth revisiting if that changes.
 - Lever config-driven sources are down to just the demo company — nearly
   every real Lever board that was tried has gone dead; Greenhouse is
   carrying the "config-driven" story right now

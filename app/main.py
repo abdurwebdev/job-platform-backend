@@ -12,6 +12,7 @@ from app.routes.health_routes import router as health_router
 from app.config.config import settings
 
 from app.middleware.request_id import RequestIDMiddleware
+from app.scraper.scheduler import start_scheduler
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -26,6 +27,8 @@ async def lifespan(app: FastAPI):
             connection.execute(text("SELECT 1"))
 
         logger.info("Database connected and tables verified successfully.")
+
+        start_scheduler()
 
     except Exception as e:
         logger.critical(
